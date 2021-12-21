@@ -3,10 +3,11 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 
-contract CBMarket is ReentrancyGuard {
+contract CBMarket is IERC721Receiver, ReentrancyGuard {
     using Counters for Counters.Counter;
     Counters.Counter private _tokenIds;
     Counters.Counter private _tokensSold;
@@ -39,10 +40,21 @@ contract CBMarket is ReentrancyGuard {
         owner = payable(msg.sender);
     }
 
+    function onERC721Received(
+        address operator, 
+        address from, 
+        uint256 tokenId, 
+        bytes calldata data
+    ) external override returns (bytes4) {
+        return IERC721Receiver.onERC721Received.selector;
+    }
+
     function createMarketItem(address nftContract, uint tokenId, uint price) public payable nonReentrant {
         _tokenIds.increment();
         uint newItemId = _tokenIds.current();
 
+        IERC721(nftContract).safeTransferFrom(msg.sender, address(this), tokenId);
+        
         idToMarketToken[newItemId] = MarketToken(
             newItemId,
             tokenId,
@@ -52,8 +64,6 @@ contract CBMarket is ReentrancyGuard {
             price,
             false
         );
-
-        IERC721(nftContract).safeTransferFrom(msg.sender, address(this), tokenId);
 
         emit MarketTokenMinted(
             newItemId,
