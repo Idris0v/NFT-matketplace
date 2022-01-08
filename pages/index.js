@@ -27,14 +27,17 @@ export default function Home() {
     const items = await Promise.all(data
       .filter(i => typeof i === 'object' && i.sold === false)
       .map(async i => {
+        console.log('in map', i);
         const tokenUri = await nftContract.tokenURI(i.tokenId);
-        const meta = await axios.get(tokenUri);
+        const meta = await axios.get('https://ipfs.io/ipfs/QmSu2Kfas6uZgrMdWnJkFFvCcs4UttQtF4fmvo4XTpfgyA');
+        console.log(meta.data);
         const { image, name, description } = meta.data;
+        debugger;
         const price = ethers.utils.formatUnits(i.price, 'ether');
         return {
           tokenId: i.tokenId.toNumber(),
           seller: i.seller,
-          owner: owner,
+          owner: i.owner,
           image,
           name,
           description,
