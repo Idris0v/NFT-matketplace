@@ -38,11 +38,14 @@ describe("CBMarket", function () {
 
     let itemsUnsold = await market.fetchMarketTokens();
     expect(itemsUnsold.length).to.equal(2);
+    expect(itemsUnsold[0].sold).to.be.false;
+    expect(itemsUnsold[1].sold).to.be.false;
 
     await market.connect(buyer).createMarketSale(nftContractAddress, 1, {value: auctionPrice});
 
     itemsUnsold = await market.fetchMarketTokens();
     expect(itemsUnsold.length).to.equal(1);
+    expect(itemsUnsold[0].sold).to.be.false;
 
     const myNfts = await market.connect(buyer).fetchMyNfts();
     expect(myNfts.length).to.equal(5);
