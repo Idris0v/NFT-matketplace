@@ -8,35 +8,25 @@ import CBMarket from '/artifacts/contracts/CBMarket.sol/CBMarket.json'
 import NFT from '/artifacts/contracts/NFT.sol/NFT.json'
 import { useState } from "react";
 
-const baseInfuraUrl = 'https://ipfs.infura.io:5001/api/v0'
-const client = create(baseInfuraUrl)
+const baseIpfsUrl = 'https://ipfs.io/ipfs/'
+const client = create(baseIpfsUrl)
 
 export default function MintToken() {
     const [loading, setLoading] = useState(false)
     const [fileUri, setFileUri] = useState(null)
     const [form, setForm] = useState({ price: '', name: '', description: '' })
 
-    const fileInputProps = {
-        name: 'file',
-    }
-
     async function onFileUpload(e) {
         const file = e.target.files[0]
         try {
             const added = await client.add(file, { progress: (p) => console.log('progress: ' + p) });
-            setFileUri(baseInfuraUrl + '/' + added.path);
+            setFileUri(baseIpfsUrl + added.path);
         } catch (error) {
             console.log('Error uploading file', error);
         }
     }
 
     async function onFinish(form) {
-        // console.log(form);
-        // const {lastModified, name, size, type, webkitRelativePath} = form.file.file;
-        // const file = {
-        //     lastModified, name, size, type, webkitRelativePath
-        // }
-        // await onFileUpload(file);
         const {assetName, description, price} = form;
         uploadToIPFS(assetName, description, price);
     }
@@ -45,7 +35,7 @@ export default function MintToken() {
         const data = JSON.stringify({name, description, image: fileUri})
         try {
             const added = await client.add(data);
-            const nftUri = baseInfuraUrl + '/' + added.path;
+            const nftUri = baseIpfsUrl + added.path;
             createMarketItem(nftUri, price);
         } catch (error) {
             console.log('Error uploading file', error);
@@ -62,8 +52,6 @@ export default function MintToken() {
         const nftContract = new ethers.Contract(nftAddress, NFT.abi, signer)
         const transaction = await nftContract.mintToken(nftUri)
         const tx = await transaction.wait();
-        console.log('tx', tx);
-        console.log('tx.events', tx.events);
         const tokenId = tx.events[0].args[2].toNumber();
         const bigNumPrice = ethers.utils.parseEther(price, 'ether');
 
